@@ -1,147 +1,235 @@
-// render.js - Skeleton for rendering the game
+// render.js - Updated to work with main.js
+
+let playerEl;
+let robotEl;
+let rainEl;
+let weatherEl;
+let rHpEl;
+let logEl;
+
+// Rain collision system
+let rainInterval = null;
+let rainDrops = [];
+let bossPosition = { x: 0, y: 0, width: 0, height: 0 };
+let bossHitByRain = false;
+
+// Sprite maps
+const playerSprites = {
+  stand: "player-stand.png",
+  hit: "player-swordhit.png",
+};
+
+const robotSprites = {
+  stand: "robot-stand.png",
+  crying: "robot-crying.png",
+  dead: "robot-dead.png",
+  run: "robot-runsaway.png",
+};
 
 // ----------------------
-// DOM Elements (you'll need to add these to your HTML)
-// ----------------------
-let canvas; // or whatever container you're using
-let playerElement;
-let bossElement;
-let combatLogElement;
-let playerHealthElement;
-let bossHealthElement;
-let rainEffectElement;
-
-// ----------------------
-// Initialize (call this when DOM is ready)
+// Initialize
 // ----------------------
 export function init() {
-  // TODO: Get your DOM elements here
-  // canvas = document.getElementById('game-canvas');
-  // playerElement = document.getElementById('player');
-  // bossElement = document.getElementById('boss');
-  // combatLogElement = document.getElementById('combat-log');
-  // etc.
+  playerEl = document.getElementById("player");
+  robotEl = document.getElementById("robot");
+  rainEl = document.getElementById("rain");
+  weatherEl = document.getElementById("weather");
+  rHpEl = document.getElementById("rHp");
+  logEl = document.getElementById("log");
+  
+  updateBossPosition();
+}
+
+function updateBossPosition() {
+  if (robotEl) {
+    const rect = robotEl.getBoundingClientRect();
+    bossPosition = {
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height
+    };
+  }
 }
 
 // ----------------------
-// Main Draw Function
+// Main Draw Function (called from main.js)
 // ----------------------
 export function draw(state) {
-  // This is called every turn to update the UI
-  // state contains:
-  // - state.playerHits (number 0-5)
-  // - state.bossHits (number 0-5)
-  // - state.turn ("player" or "boss")
-  // - state.isGameOver (boolean)
-  // - state.winner ("player" or "boss" or null)
-  // - state.isRaining (boolean)
-  // - state.combatLog (array of strings)
+  // Update health
+  if (rHpEl) {
+    rHpEl.textContent = state.bossHits;
+  }
   
-  drawPlayerHealth(state.playerHits);
-  drawBossHealth(state.bossHits);
+  // Update combat log
   drawCombatLog(state.combatLog);
   
-  if (state.isGameOver) {
-    drawGameOver(state.winner);
-  }
+  // Update boss position for collision
+  updateBossPosition();
   
-  if (state.isRaining) {
-    // Rain effect should already be showing from startRainEffect()
+  // Handle game over
+  if (state.isGameOver) {
+    if (state.winner === "player") {
+      renderRobot("dead");
+    } else {
+      // Player lost
+      renderRobot("stand");
+    }
+  } else {
+    // Normal gameplay
+    if (state.bossHits <= 2) {
+      renderRobot("crying");
+    } else {
+      renderRobot("stand");
+    }
   }
 }
 
 // ----------------------
-// Health Bar Rendering
-// ----------------------
-function drawPlayerHealth(hits) {
-  // TODO: Update player health display
-  // hits is a number from 0-5
-  console.log('Player health:', hits);
-}
-
-function drawBossHealth(hits) {
-  // TODO: Update boss health display
-  // hits is a number from 0-5
-  console.log('Boss health:', hits);
-}
-
-// ----------------------
-// Combat Log Rendering
+// Combat Log
 // ----------------------
 function drawCombatLog(log) {
-  // TODO: Display the combat log messages
-  // log is an array of strings (max 6 messages)
-  // Example: ["FIGHT!", "You: BONK! 👊", "Boss: Beep boop! 🤖"]
-  console.log('Combat log:', log);
+  if (!logEl) return;
+  logEl.textContent = log.join("\n");
+  logEl.scrollTop = logEl.scrollHeight;
 }
 
 // ----------------------
-// Rain Effects
+// Rain System with Collision
 // ----------------------
 export function startRainEffect() {
-  // TODO: Show rain animation/effect
-  // This is called when rain starts
   console.log('☁️ Rain starting!');
   
-  // Example ideas:
-  // - Add a CSS class for rain animation
-  // - Show rain particles
-  // - Darken the background
-  // - Play rain sound
+  if (!rainEl) return;
+  
+  bossHitByRain = false;
+  rainDrops = [];
+  
+  // Show rain overlay
+  rainEl.classList.add("on");
+  
+  if (weatherEl) {
+    weatherEl.textContent = "🌧️ RAINING!";
+  }
+  
+  // Start collision detection
+  rainInterval = setInterval(() => {
+    spawnRainParticles();
+    updateRainParticles();
+    checkRainCollision();
+  }, 50);
+}
+
+function spawnRainParticles() {
+  // Create virtual rain drops for collision
+  for (let i = 0; i < 3; i++) {
+    rainDrops.push({
+      x: Math.random() * window.innerWidth,
+      y: -10,
+      speed: Math.random() * 5 + 3
+    });
+  }
+}
+
+function updateRainParticles() {
+  rainDrops = rainDrops.filter(drop => {
+    drop.y += drop.speed;
+    return drop.y < window.innerHeight + 10;
+  });
+}
+
+function checkRainCollision() {
+  if (bossHitByRain) return;
+  
+  updateBossPosition(); // Update every frame
+  
+  for (let drop of rainDrops) {
+    if (drop.x >= bossPosition.x && 
+        drop.x <= bossPosition.x + bossPosition.width &&
+        drop.y >= bossPosition.y && 
+        drop.y <= bossPosition.y + bossPosition.height) {
+      
+      bossHitByRain = true;
+      console.log('💧 Boss hit by rain!');
+      
+      // Visual feedback
+      if (robotEl) {
+        robotEl.classList.add("robot-hit");
+        setTimeout(() => robotEl.classList.remove("robot-hit"), 220);
+      }
+      break;
+    }
+  }
 }
 
 export function stopRainEffect() {
-  // TODO: Hide rain animation/effect
-  // This is called when rain stops
   console.log('☀️ Rain stopping!');
   
-  // Example ideas:
-  // - Remove rain CSS class
-  // - Clear rain particles
-  // - Restore normal background
-  // - Stop rain sound
-}
-
-// ----------------------
-// Game Over Screen
-// ----------------------
-function drawGameOver(winner) {
-  // TODO: Show game over screen
-  // winner is either "player" or "boss"
-  console.log('Game over! Winner:', winner);
+  if (rainInterval) {
+    clearInterval(rainInterval);
+    rainInterval = null;
+  }
   
-  // Example ideas:
-  // - Show victory/defeat message
-  // - Show restart button
-  // - Play victory/defeat sound
-  // - Animate the winner
+  if (rainEl) {
+    rainEl.classList.remove("on");
+  }
+  
+  if (weatherEl) {
+    weatherEl.textContent = "Clear";
+  }
+  
+  rainDrops = [];
+  bossHitByRain = false;
 }
 
 // ----------------------
-// Optional: Visual Effects for Actions
+// Collision Check (for boss.js)
 // ----------------------
-export function playAttackEffect(isPlayer) {
-  // TODO: Optional - show attack animation
-  // isPlayer is true if player attacked, false if boss attacked
-  console.log('Attack effect!', isPlayer ? 'player' : 'boss');
+export function checkBossRainCollision() {
+  return bossHitByRain;
 }
 
-export function playDodgeEffect() {
-  // TODO: Optional - show dodge animation
-  console.log('Dodge effect!');
-}
-
-export function playHitEffect(isPlayer) {
-  // TODO: Optional - show hit/damage animation
-  // isPlayer is true if player was hit, false if boss was hit
-  console.log('Hit effect!', isPlayer ? 'player' : 'boss');
+export function resetRainCollision() {
+  bossHitByRain = false;
 }
 
 // ----------------------
-// Call init when ready
+// Player Actions (visual feedback)
 // ----------------------
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
+function renderPlayer(state) {
+  if (!playerEl) return;
+  playerEl.src = playerSprites[state] || playerSprites.stand;
+}
+
+function renderRobot(state) {
+  if (!robotEl) return;
+  robotEl.src = robotSprites[state] || robotSprites.stand;
+}
+
+// Trigger animations based on actions
+export function playAttackEffect() {
+  renderPlayer("hit");
+  if (playerEl) {
+    playerEl.classList.add("player-hit");
+    setTimeout(() => {
+      playerEl.classList.remove("player-hit");
+      renderPlayer("stand");
+    }, 220);
+  }
+}
+
+export function playHitEffect() {
+  if (robotEl) {
+    robotEl.classList.add("robot-hit");
+    setTimeout(() => robotEl.classList.remove("robot-hit"), 220);
+  }
+}
+
+// ----------------------
+// Auto-init
+// ----------------------
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
 }
