@@ -19,9 +19,9 @@ resetGame()
 - Rule-based adaptive AI
 
 ## Team Roles
-- Game Logic & Player Controls: Person 1
-- AI Boss & Learning Logic: Person 2
-- Pixel Art, Rendering & UX: Person 3
+- Game Logic & Player Controls: Divine
+- AI Boss & Learning Logic: Shreya
+- Pixel Art, Rendering & UX: Saba
 
 ## How to Run
 Open index.html using a local server (Live Server recommended).
