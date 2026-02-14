@@ -2,11 +2,16 @@
 
 A pixel-art arena game where the robot adapts its strategy based on the player's actions.
 
-## How It Works
-- Player can attack, dodge, or wait
-- Boss tracks player behavior
-- Boss increases counters to repeated actions
-- Strategy changes each round
+## Core Game API
+
+handlePlayerAction(action)  
+→ action: "attack" | "dodge" | "wait"
+
+getGameState()  
+→ returns playerHP, bossHP, turn, lastAction
+
+resetGame()  
+→ resets entire match
 
 ## Tech Stack
 - JavaScript + HTML Canvas
