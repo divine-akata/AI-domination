@@ -1,4 +1,5 @@
 // render.js - Updated to work with main.js
+// Handles rendering game state, rain effects, and animations.
 
 let playerEl;
 let robotEl;
@@ -8,40 +9,52 @@ let rHpEl;
 let logEl;
 
 // Rain collision system
-let rainInterval = null;
+let rainAnimationId = null; // Use RAF for smoother performance
 let rainDrops = [];
+const MAX_RAIN_DROPS = 50; // Limit to prevent performance issues
 let bossPosition = { x: 0, y: 0, width: 0, height: 0 };
 let bossHitByRain = false;
 
 // Sprite maps
 const playerSprites = {
-  stand: "player-stand.png",
-  hit: "player-swordhit.png",
+  stand: "assets/sprites/player/player-stand.png",
+  hit: "assets/sprites/player/player-swordhit.png",
 };
 
 const robotSprites = {
-  stand: "robot-stand.png",
-  crying: "robot-crying.png",
-  dead: "robot-dead.png",
-  run: "robot-runsaway.png",
+  stand: "assets/sprites/robot/robot-stand.png",
+  crying: "assets/sprites/robot/robot-crying.png",
+  dead: "assets/sprites/robot/robot-dead.png",
+  run: "assets/sprites/robot/robot-runsaway.png",
 };
 
 // ----------------------
 // Initialize
 // ----------------------
+/**
+ * Initializes DOM elements and boss position.
+ */
 export function init() {
-  playerEl = document.getElementById("player");
-  robotEl = document.getElementById("robot");
-  rainEl = document.getElementById("rain");
-  weatherEl = document.getElementById("weather");
-  rHpEl = document.getElementById("rHp");
-  logEl = document.getElementById("log");
-  
-  updateBossPosition();
+  try {
+    playerEl = document.getElementById("player");
+    robotEl = document.getElementById("robot");
+    rainEl = document.getElementById("rain");
+    weatherEl = document.getElementById("weather");
+    rHpEl = document.getElementById("rHp");
+    logEl = document.getElementById("log");
+    
+    updateBossPosition();
+  } catch (error) {
+    console.error("Error initializing render.js:", error);
+  }
 }
 
+/**
+ * Updates the boss's position for collision detection.
+ */
 function updateBossPosition() {
-  if (robotEl) {
+  if (!robotEl) return;
+  try {
     const rect = robotEl.getBoundingClientRect();
     bossPosition = {
       x: rect.left,
@@ -49,54 +62,75 @@ function updateBossPosition() {
       width: rect.width,
       height: rect.height
     };
+  } catch (error) {
+    console.error("Error updating boss position:", error);
   }
 }
 
 // ----------------------
 // Main Draw Function (called from main.js)
 // ----------------------
+/**
+ * Updates the UI based on the current game state.
+ * @param {Object} state - The game state from main.js.
+ */
 export function draw(state) {
-  // Update health
-  if (rHpEl) {
-    rHpEl.textContent = state.bossHits;
-  }
-  
-  // Update combat log
-  drawCombatLog(state.combatLog);
-  
-  // Update boss position for collision
-  updateBossPosition();
-  
-  // Handle game over
-  if (state.isGameOver) {
-    if (state.winner === "player") {
-      renderRobot("dead");
-    } else {
-      // Player lost
-      renderRobot("stand");
+  try {
+    // Update health
+    if (rHpEl) {
+      rHpEl.textContent = state.bossHits;
     }
-  } else {
-    // Normal gameplay
-    if (state.bossHits <= 2) {
-      renderRobot("crying");
+    
+    // Update combat log
+    drawCombatLog(state.combatLog);
+    
+    // Update boss position for collision
+    updateBossPosition();
+    
+    // Handle game over
+    if (state.isGameOver) {
+      if (state.winner === "player") {
+        renderRobot("dead");
+      } else {
+        // Player lost
+        renderRobot("stand");
+      }
     } else {
-      renderRobot("stand");
+      // Normal gameplay
+      if (state.bossHits <= 2) {
+        renderRobot("crying");
+      } else {
+        renderRobot("stand");
+      }
     }
+  } catch (error) {
+    console.error("Error in draw():", error);
   }
 }
 
 // ----------------------
 // Combat Log
 // ----------------------
+/**
+ * Updates the combat log display.
+ * @param {Array} log - Array of log messages.
+ */
 function drawCombatLog(log) {
   if (!logEl) return;
-  logEl.textContent = log.join("\n");
-  logEl.scrollTop = logEl.scrollHeight;
+  try {
+    logEl.textContent = log.join("\n");
+    logEl.scrollTop = logEl.scrollHeight;
+  } catch (error) {
+    console.error("Error drawing combat log:", error);
+  }
 }
 
 // ----------------------
 // Rain System with Collision
 // ----------------------
+/**
+ * Starts the rain effect, including overlay and collision simulation.
+ */
 export function startRainEffect() {
   console.log('☁️ Rain starting!');
   
@@ -112,16 +146,21 @@ export function startRainEffect() {
     weatherEl.textContent = "🌧️ RAINING!";
   }
   
-  // Start collision detection
-  rainInterval = setInterval(() => {
+  // Start collision detection with RAF for better performance
+  const animateRain = () => {
     spawnRainParticles();
     updateRainParticles();
     checkRainCollision();
-  }, 50);
+    rainAnimationId = requestAnimationFrame(animateRain);
+  };
+  animateRain();
 }
 
+/**
+ * Spawns new rain particles, limited by MAX_RAIN_DROPS.
+ */
 function spawnRainParticles() {
-  // Create virtual rain drops for collision
+  if (rainDrops.length >= MAX_RAIN_DROPS) return;
   for (let i = 0; i < 3; i++) {
     rainDrops.push({
       x: Math.random() * window.innerWidth,
@@ -131,6 +170,9 @@ function spawnRainParticles() {
   }
 }
 
+/**
+ * Updates rain particle positions and removes off-screen ones.
+ */
 function updateRainParticles() {
   rainDrops = rainDrops.filter(drop => {
     drop.y += drop.speed;
@@ -138,10 +180,13 @@ function updateRainParticles() {
   });
 }
 
+/**
+ * Checks for collisions between rain drops and the boss.
+ */
 function checkRainCollision() {
   if (bossHitByRain) return;
   
-  updateBossPosition(); // Update every frame
+  updateBossPosition(); // Update position
   
   for (let drop of rainDrops) {
     if (drop.x >= bossPosition.x && 
@@ -162,12 +207,15 @@ function checkRainCollision() {
   }
 }
 
+/**
+ * Stops the rain effect and cleans up.
+ */
 export function stopRainEffect() {
   console.log('☀️ Rain stopping!');
   
-  if (rainInterval) {
-    clearInterval(rainInterval);
-    rainInterval = null;
+  if (rainAnimationId) {
+    cancelAnimationFrame(rainAnimationId);
+    rainAnimationId = null;
   }
   
   if (rainEl) {
@@ -185,10 +233,17 @@ export function stopRainEffect() {
 // ----------------------
 // Collision Check (for boss.js)
 // ----------------------
+/**
+ * Checks if the boss has been hit by rain.
+ * @returns {boolean} True if hit.
+ */
 export function checkBossRainCollision() {
   return bossHitByRain;
 }
 
+/**
+ * Resets the rain collision flag.
+ */
 export function resetRainCollision() {
   bossHitByRain = false;
 }
@@ -196,17 +251,27 @@ export function resetRainCollision() {
 // ----------------------
 // Player Actions (visual feedback)
 // ----------------------
+/**
+ * Renders the player sprite.
+ * @param {string} state - Sprite state (e.g., "stand").
+ */
 function renderPlayer(state) {
   if (!playerEl) return;
   playerEl.src = playerSprites[state] || playerSprites.stand;
 }
 
+/**
+ * Renders the robot sprite.
+ * @param {string} state - Sprite state (e.g., "stand").
+ */
 function renderRobot(state) {
   if (!robotEl) return;
   robotEl.src = robotSprites[state] || robotSprites.stand;
 }
 
-// Trigger animations based on actions
+/**
+ * Plays the attack animation for the player.
+ */
 export function playAttackEffect() {
   renderPlayer("hit");
   if (playerEl) {
@@ -218,6 +283,9 @@ export function playAttackEffect() {
   }
 }
 
+/**
+ * Plays the hit animation for the robot.
+ */
 export function playHitEffect() {
   if (robotEl) {
     robotEl.classList.add("robot-hit");

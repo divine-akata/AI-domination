@@ -4,61 +4,83 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AI DOMINATION</title>
+  <meta name="description" content="A turn-based combat game where you battle an AI robot. Brought to you by SSDtech." /> <!-- Added for SEO -->
 
   <!-- Styles -->
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <div class="wrap">
+  <div class="wrap"> <!-- Main wrapper for the entire page -->
 
-    <!-- HUD -->
-    <div class="panel">
-      <strong>Robot HP:</strong> <span id="rHp">5</span>/5
-      &nbsp; | &nbsp;
-      <span id="weather">Clear</span>
-    </div>
-
-    <!-- Arena -->
-    <div class="arena" id="arena">
-      <!-- Background -->
-      <img id="clouds" class="layer" src="assets/sprites/Cloud.png" alt="" />
-
-      <!-- Trees -->
-      <img id="tree-left"  class="layer tree" src="assets/sprites/Tree.png" alt="" />
-      <img id="tree-right" class="layer tree" src="assets/sprites/Tree.png"  alt="" />
-
-      <!-- Grass tiles -->
-      <img class="grass1" src="assets/sprites/Grass.png" alt="" />
-      <img class="grass2" src="assets/sprites/Grass.png"  alt="" />
-      <img class="grass3" src="assets/sprites/Grass.png"  alt="" />
-
-      <!-- Characters -->
-      <img id="player" class="sprite" src="assets/sprites/player/player-stand.png" alt="player" />
-      <img id="robot"  class="sprite" src="assets/sprites/robot/robot-stand.png" alt="robot" />
-
-      <!-- Rain overlay -->
-      <img id="rain" class="layer" src="assets/sprites/Rain.png" alt="" />
-    </div>
-
-    <!-- Controls + Log -->
-    <div class="panel">
-      <div class="controls">
-        <button id="btnHit">Hit</button>
-        <button id="btnJump">Jump</button>
-        <button id="btnRestart">Restart</button>
+    <!-- START SCREEN -->
+    <section id="startScreen" class="start-screen" role="dialog" aria-labelledby="game-title" aria-describedby="controls-hint">
+      <h1 id="game-title">AI DOMINATION</h1>
+      <p>brought to you by SSDtech</p>
+      <button id="btnPlay" class="play-button" aria-label="Start the game">PLAY</button>
+      <div class="controls-hint" id="controls-hint">
+        <p>Controls: A = Attack | W = Jump | R = Restart</p>
       </div>
-      <div id="log" class="panel" style="margin-top:10px;"></div>
-    </div>
+    </section>
+
+    <!-- MAIN GAME CONTENT -->
+    <main class="game-content"> <!-- Semantic wrapper for game elements -->
+
+      <!-- HUD -->
+      <section class="panel" role="status" aria-live="polite"> <!-- Added for screen reader updates -->
+        <label for="rHp"><strong>Robot HP:</strong></label> <span id="rHp" aria-label="Robot health points">5</span>/5
+        &nbsp; | &nbsp;
+        <span id="weather" aria-label="Current weather condition">Clear</span>
+      </section>
+
+      <!-- Arena -->
+      <section class="arena" id="arena" role="img" aria-label="Game arena with characters and environment">
+        <!-- Background -->
+        <img id="clouds" class="layer" src="assets/sprites/Cloud.png" alt="Clouds in the background sky" loading="lazy" />
+
+        <!-- Trees -->
+        <img id="tree-left" class="layer tree" src="assets/sprites/Tree.png" alt="Tree on the left side of the arena" loading="lazy" />
+        <img id="tree-right" class="layer tree" src="assets/sprites/Tree.png" alt="Tree on the right side of the arena" loading="lazy" />
+
+        <!-- Grass tiles -->
+        <img class="grass1" src="assets/sprites/Grass.png" alt="Grass tile on the ground" loading="lazy" />
+        <img class="grass2" src="assets/sprites/Grass.png" alt="Grass tile on the ground" loading="lazy" />
+        <img class="grass3" src="assets/sprites/Grass.png" alt="Grass tile on the ground" loading="lazy" />
+
+        <!-- Characters -->
+        <img id="player" class="sprite" src="assets/sprites/player/player-stand.png" alt="Player character standing in the arena" />
+        <img id="robot" class="sprite" src="assets/sprites/robot/robot-stand.png" alt="Robot enemy standing in the arena" />
+
+        <!-- Rain overlay -->
+        <img id="rain" class="layer" src="assets/sprites/Rain.png" alt="Rain effect overlay during rainy weather" loading="lazy" />
+      </section>
+
+      <!-- Controls + Log -->
+      <section class="panel" role="region" aria-labelledby="controls-heading">
+        <h2 id="controls-heading" class="sr-only">Game Controls and Log</h2> <!-- Screen reader only -->
+        <div class="controls">
+          <button id="btnHit" data-action="attack" aria-label="Attack the robot">Hit</button>
+          <button id="btnJump" data-action="jump" aria-label="Jump to avoid attacks">Jump</button>
+          <button id="btnRestart" data-action="reset" aria-label="Restart the game">Restart</button>
+        </div>
+        <div id="log" class="panel" style="margin-top:10px;" role="log" aria-live="assertive" aria-label="Combat log messages"></div> <!-- Added for dynamic updates -->
+      </section>
+
+    </main>
 
   </div>
 
+  <!-- Fallback for no JS -->
+  <noscript>
+    <p>This game requires JavaScript to play. Please enable it in your browser settings.</p>
+  </noscript>
+
   <!-- Scripts (ORDER MATTERS) -->
-<script type="module" src="player.js"></script>
-<script type="module" src="ai.js"></script>
-<script type="module" src="boss.js"></script>
-<script type="module" src="render.js"></script>
-<script type="module" src="input.js"></script>
-<script type="module" src="main.js"></script>
+  <script type="module" src="player.js"></script>
+  <script type="module" src="ai.js"></script>
+  <script type="module" src="boss.js"></script>
+  <script type="module" src="render.js"></script>
+  <script type="module" src="input.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
