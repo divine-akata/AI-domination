@@ -28,6 +28,15 @@ const SILLY_ATTACK_MESSAGES = [
   "KAPOW! 💢"
 ];
 
+const SILLY_JUMP_MESSAGES = [
+  "Boing! 🦘",
+  "Wheee! 🎈",
+  "Up up and away! 🚀",
+  "Can't touch this! 🕺",
+  "Parkour! 🤸"
+];
+
+
 // ----------------------
 // Player Class
 // ----------------------
@@ -70,15 +79,20 @@ export class Player {
     };
   }
 
-  wait() {
-    this.isDodging = false;
-    this.lastAction = "wait";
-    
-    return { 
-      type: "wait",
-      sillyText: "...waiting... ⏰"
-    };
-  }
+  jump() {
+  this.isDodging = true; // Jump acts like dodge (avoids damage)
+  this.lastAction = "jump";
+  
+  const randomMsg = SILLY_JUMP_MESSAGES[
+    Math.floor(Math.random() * SILLY_JUMP_MESSAGES.length)
+  ];
+  
+  return { 
+    type: "jump",
+    sillyText: randomMsg,
+    effects: { jump: true, invulnFrames: 10 } // Can add bounce animation
+  };
+}
 
   takeDamage(amount = 1) {
     if (this.isDodging) {

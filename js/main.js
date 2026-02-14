@@ -63,10 +63,10 @@ function scheduleNextRain() {
 function startRain() {
   if (state.isGameOver) return;
   
-  state.isRaining = true; // Fixed: was state.isRaining() = true
-  addToCombatLog("☁️ It's starting to rain!");
+  state.isRaining = true;
+  addToCombatLog("Is it raining?");
   
-  render.startRainEffect(); // You'll need this in render.js
+  render.startRainEffect();
   
   rainStopTimer = setTimeout(() => {
     stopRain();
@@ -75,7 +75,7 @@ function startRain() {
 
 function stopRain() {
   if (!state.isRaining) return;
-  addToCombatLog("Rain stops! ☀️");
+  addToCombatLog("Rain stops!");
   state.isRaining = false;
   state.currentRain = null;
   
@@ -87,14 +87,22 @@ function stopRain() {
 function applyRainEffects(action, isPlayer) {
   if (!state.isRaining) return action;
   
+  // Player dodge can fail in rain
   if (action.type === "dodge" && isPlayer && Math.random() < 0.3) {
     action.dodgeFailed = true;
-    action.sillyText = "Oops! Slipped in the rain! 💦";
+    action.sillyText = "Oops! I just slipped";
   }
   
+  // Player jump can fail in rain
+  if (action.type === "jump" && isPlayer && Math.random() < 0.3) {
+    action.dodgeFailed = true;
+    action.sillyText = "eewww, there's mud!";
+  }
+  
+  // Boss attack can short-circuit in rain
   if (action.type === "attack" && !isPlayer && Math.random() < 0.3) {
     action.damage = 0;
-    action.sillyText = "Robot short-circuits in rain! ⚡💧";
+    action.sillyText = "wha-a--att's-s ha-p--pen-i--";
   }
   
   return action;
@@ -104,6 +112,13 @@ function applyRainEffects(action, isPlayer) {
 // CORE GAME API
 // ----------------------
 export function handlePlayerAction(actionName, unlockInput) {
+  // Handle reset separately
+  if (actionName === "reset") {
+    resetGame();
+    unlockInput?.();
+    return;
+  }
+
   if (state.isGameOver || state.turn !== TURN.PLAYER) {
     unlockInput?.();
     return;
@@ -122,8 +137,8 @@ export function handlePlayerAction(actionName, unlockInput) {
     player.isDodging = false;
     addToCombatLog(action.sillyText);
   } else {
-    state.lastAction = action.type; // Fixed: was action,type (comma instead of dot)
-    ai.observePlayerAction(action.type);
+    state.lastAction = action.type;
+    ai.observePlayerAction(action.type); // AI learns from player
     applyPlayerAction(action);
   }
 
@@ -147,9 +162,9 @@ export function getGameState() {
   return { ...state };
 }
 
-// Removed duplicate resetGame function
 export function resetGame() {
   stopRainSystem();
+  ai.reset(); // Reset AI learning
   initGame();
 }
 
@@ -170,6 +185,11 @@ export function getRainState() {
   };
 }
 
+// Export AI stats for debugging/UI
+export function getAIStats() {
+  return ai.getAIStats();
+}
+
 // ----------------------
 // INTERNAL GAME LOGIC
 // ----------------------
@@ -177,7 +197,7 @@ function executePlayerAction(actionName) {
   const actions = {
     attack: () => player.attack(),
     dodge: () => player.dodge(),
-    wait: () => player.wait()
+    jump: () => player.jump()
   };
 
   return actions[actionName]?.();
@@ -193,9 +213,20 @@ function applyPlayerAction(action) {
 }
 
 function runBossTurn() {
-  let bossAction = boss.chooseAction(state.bossHits);
+  // Pass rain state to boss AI so it can flee
+  let bossAction = boss.chooseAction(state.bossHits, state.isRaining);
 
-  // Apply rain effects to boss action
+  // Check if boss is fleeing from rain
+  if (bossAction.fleeing) {
+    addToCombatLog(`Boss: ${bossAction.sillyText}`);
+    // Boss doesn't attack while fleeing, just skip turn
+    if (!checkGameOver()) {
+      state.turn = TURN.PLAYER;
+    }
+    return;
+  }
+
+  // Apply rain effects to boss action (short-circuit chance)
   bossAction = applyRainEffects(bossAction, false);
 
   // Add boss action to combat log

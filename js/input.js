@@ -4,8 +4,8 @@
 const KEY_BINDINGS = {
   a: "attack",
   d: "dodge",
-  w: "wait",
-  r: "reset" // Example: add more actions easily
+  w: "jump", // Changed from "wait" to "jump"
+  r: "reset"
 };
 
 // ----------------------
