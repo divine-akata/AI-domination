@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI DOMINATION</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- HUD -->
+    <div class="panel">
+      <strong>Robot HP:</strong> <span id="rHp">5</span>/5
+      &nbsp; | &nbsp;
+      <span id="weather">Clear</span>
+    </div>
+
+    <!-- Arena -->
+    <div class="arena" id="arena">
+      <!-- Background -->
+      <img id="clouds" class="layer" src="Cloud.png" alt="" />
+
+      <!-- Trees -->
+      <img id="tree-left"  class="layer tree" src="Tree.png" alt="" />
+      <img id="tree-right" class="layer tree" src="Tree.png" alt="" />
+
+      <!-- Grass tiles -->
+      <img class="grass1" src="Grass.png" alt="" />
+      <img class="grass2" src="Grass.png" alt="" />
+      <img class="grass3" src="Grass.png" alt="" />
+
+      <!-- Characters -->
+      <img id="player" class="sprite" src="player-stand.png" alt="player" />
+      <img id="robot"  class="sprite" src="robot-stand.png" alt="robot" />
+
+      <!-- Rain overlay -->
+      <img id="rain" class="layer" src="Rain.png" alt="" />
+    </div>
+
+    <!-- Controls + Log -->
+    <div class="panel">
+      <div class="controls">
+        <button id="btnHit">Hit</button>
+        <button id="btnJump">Jump</button>
+        <button id="btnRestart">Restart</button>
+      </div>
+      <div id="log" class="panel" style="margin-top:10px;"></div>
+    </div>
+
+  </div>
+
+  <!-- Scripts (ORDER MATTERS) -->
+<script type="module" src="player.js"></script>
+<script type="module" src="ai.js"></script>
+<script type="module" src="boss.js"></script>
+<script type="module" src="render.js"></script>
+<script type="module" src="input.js"></script>
+<script type="module" src="main.js"></script>
+</body>
+</html>

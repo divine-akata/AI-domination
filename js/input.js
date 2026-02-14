@@ -52,3 +52,39 @@ export function setupInput(onAction, options = {}) {
     getLastKey: () => lastKey
   };
 }
+
+// Add to input.js after setupInput function
+
+// Wire up UI buttons
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initButtons);
+} else {
+  initButtons();
+}
+
+function initButtons() {
+  const btnHit = document.getElementById("btnHit");
+  const btnJump = document.getElementById("btnJump");
+  const btnRestart = document.getElementById("btnRestart");
+  
+  if (btnHit) {
+    btnHit.addEventListener("click", () => {
+      const event = new KeyboardEvent("keydown", { key: "a" });
+      window.dispatchEvent(event);
+    });
+  }
+  
+  if (btnJump) {
+    btnJump.addEventListener("click", () => {
+      const event = new KeyboardEvent("keydown", { key: "w" });
+      window.dispatchEvent(event);
+    });
+  }
+  
+  if (btnRestart) {
+    btnRestart.addEventListener("click", () => {
+      const event = new KeyboardEvent("keydown", { key: "r" });
+      window.dispatchEvent(event);
+    });
+  }
+}
