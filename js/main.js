@@ -16,6 +16,11 @@ const TURN = {
   BOSS: "boss"
 };
 
+// Rain timing constants (in milliseconds)
+const RAIN_MIN_INTERVAL = 10000; // 10 seconds
+const RAIN_MAX_INTERVAL = 20000; // 20 seconds
+const RAIN_DURATION = 5000; // 5 seconds
+
 let rainTimer = null;
 let rainStopTimer = null;
 
@@ -33,6 +38,7 @@ function initGame() {
     winner: null,
     lastAction: null,
     isRaining: false,
+    currentRain: null,
     combatLog: ["FIGHT!"] // Store silly messages
   };
   scheduleNextRain();
@@ -41,14 +47,57 @@ function initGame() {
 }
 
 initGame();
+
 //-----------------------
 // RAIN SYSTEM
 //-----------------------
-function startRain(){
- state.isRaining() = true;
- rainStopTimer = setTimeout(() => {
-  stopRain();
- }, RAIN_DURATION);
+function scheduleNextRain() {
+  if (rainTimer) clearTimeout(rainTimer);
+  const delay = Math.random() * (RAIN_MAX_INTERVAL - RAIN_MIN_INTERVAL) + RAIN_MIN_INTERVAL;
+
+  rainTimer = setTimeout(() => {
+    startRain();
+  }, delay);
+}
+
+function startRain() {
+  if (state.isGameOver) return;
+  
+  state.isRaining = true; // Fixed: was state.isRaining() = true
+  addToCombatLog("☁️ It's starting to rain!");
+  
+  render.startRainEffect(); // You'll need this in render.js
+  
+  rainStopTimer = setTimeout(() => {
+    stopRain();
+  }, RAIN_DURATION);
+}
+
+function stopRain() {
+  if (!state.isRaining) return;
+  addToCombatLog("Rain stops! ☀️");
+  state.isRaining = false;
+  state.currentRain = null;
+  
+  render.stopRainEffect();
+
+  scheduleNextRain();
+}
+
+function applyRainEffects(action, isPlayer) {
+  if (!state.isRaining) return action;
+  
+  if (action.type === "dodge" && isPlayer && Math.random() < 0.3) {
+    action.dodgeFailed = true;
+    action.sillyText = "Oops! Slipped in the rain! 💦";
+  }
+  
+  if (action.type === "attack" && !isPlayer && Math.random() < 0.3) {
+    action.damage = 0;
+    action.sillyText = "Robot short-circuits in rain! ⚡💧";
+  }
+  
+  return action;
 }
 
 // ----------------------
@@ -60,18 +109,26 @@ export function handlePlayerAction(actionName, unlockInput) {
     return;
   }
 
-  const action = executePlayerAction(actionName);
+  let action = executePlayerAction(actionName);
   if (!action) {
     unlockInput?.();
     return;
   }
 
-  state.lastAction = action.type;
-  ai.observePlayerAction(action.type);
+  // Applying rain effects to player's action
+  action = applyRainEffects(action, true);
 
-  applyPlayerAction(action);
-  
+  if (action.dodgeFailed) {
+    player.isDodging = false;
+    addToCombatLog(action.sillyText);
+  } else {
+    state.lastAction = action.type; // Fixed: was action,type (comma instead of dot)
+    ai.observePlayerAction(action.type);
+    applyPlayerAction(action);
+  }
+
   if (checkGameOver()) {
+    stopRainSystem();
     syncState();
     render.draw(state);
     unlockInput?.();
@@ -90,7 +147,9 @@ export function getGameState() {
   return { ...state };
 }
 
+// Removed duplicate resetGame function
 export function resetGame() {
+  stopRainSystem();
   initGame();
 }
 
@@ -102,6 +161,13 @@ export function getCombatLog() {
 // Export player status for UI
 export function getPlayerStatus() {
   return player.getStatus();
+}
+
+export function getRainState() {
+  return {
+    isRaining: state.isRaining,
+    currentRain: state.currentRain
+  };
 }
 
 // ----------------------
@@ -127,20 +193,19 @@ function applyPlayerAction(action) {
 }
 
 function runBossTurn() {
-  const bossAction = boss.chooseAction(state.bossHits);
+  let bossAction = boss.chooseAction(state.bossHits);
+
+  // Apply rain effects to boss action
+  bossAction = applyRainEffects(bossAction, false);
 
   // Add boss action to combat log
   addToCombatLog(`Boss: ${bossAction.sillyText}`);
 
-  if (bossAction.type === "attack") {
+  if (bossAction.type === "attack" && bossAction.damage > 0) {
     const result = player.takeDamage(bossAction.damage);
     
-    // If dodge was successful, show the dodge message
-    if (result.blocked) {
-      addToCombatLog(result.sillyText);
-    } else {
-      addToCombatLog(result.sillyText);
-    }
+    // Show the result message
+    addToCombatLog(result.sillyText);
   }
 
   if (!checkGameOver()) {
@@ -148,18 +213,24 @@ function runBossTurn() {
   }
 }
 
+function stopRainSystem() {
+  if (rainTimer) clearTimeout(rainTimer);
+  if (rainStopTimer) clearTimeout(rainStopTimer);
+  state.isRaining = false;
+}
+
 function checkGameOver() {
   if (!player.isAlive()) {
     state.isGameOver = true;
     state.winner = TURN.BOSS;
-    addToCombatLog("YOU DIED! The robot wins! ");
+    addToCombatLog("💀 YOU DIED! The robot wins!");
     return true;
   }
 
   if (state.bossHits <= 0) {
     state.isGameOver = true;
     state.winner = TURN.PLAYER;
-    addToCombatLog(" VICTORY! Robot.exe has stopped working! ");
+    addToCombatLog("🎉 VICTORY! Robot.exe has stopped working!");
     return true;
   }
 
