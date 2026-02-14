@@ -5,35 +5,29 @@ export class Boss {
     this.isAlive = true;
     this.hasFled = false;
     this.currentMove = "neutral";
-    this.isDefeated = false;
   }
 
-  takeDamage(amount) {
-    if (!this.isAlive) return;
+    takeDamage(amount) {
+  if (!this.isAlive) return;
 
-    this.hp -= amount;
+  this.hp -= amount;
 
-    if (this.hp <= 0) {
-      this.enterDefeatStance();
-    }
+  if (this.hp <= 0) {
+    this.die();
+  } else {
+    this.currentMove = "cry";
   }
+}
 
-  enterDefeatStance() {
-    this.isDefeated = true;
-    this.currentMove = "handsUp";
-    console.log("🤖 Robot lifts hands in surrender.");
-  }
-
-  collapse() {
+  die() {
     this.isAlive = false;
-    console.log("☠️ Robot collapses.");
+    this.currentMove = "dead";
   }
 
   flee() {
     this.isAlive = false;
     this.hasFled = true;
-    this.currentMove = "cry";
-    console.log("😭 Robot cries and runs away.");
+    this.currentMove = "flee"; // cry + turn animation
   }
 
   setMove(move) {
